@@ -55,9 +55,11 @@ void double2vector(Eigen::Matrix3d &R_w_c2,
 
 void computeError(const std::string &dir_path, int ind,
     const Eigen::Matrix3d &R_wc, const Eigen::Vector3d &t_wc, 
-    std::vector<Eigen::Vector3d> &points3D,
-    std::vector<Eigen::Vector2d> &features)
+    const std::vector<Eigen::Vector3d> &points3D,
+    const std::vector<Eigen::Vector2d> &features)
 {
+    std::ofstream fout(dir_path + "repro" + std::to_string(ind) + ".txt", std::ios::out);
+
     std::cout << "\n=========\n";
     cv::Mat img = cv::imread(dir_path + std::to_string(ind) + ".png", cv::IMREAD_GRAYSCALE);
     cv::cvtColor(img, img, cv::COLOR_GRAY2RGB);
@@ -86,6 +88,10 @@ void computeError(const std::string &dir_path, int ind,
         cv::circle(img, a, 5, cv::Scalar(0, 255, 0), 2, 8);
 
         error += (pt_cam.head(2) - features.at(i)).norm();
+
+        double m = pt_cam(0) - features.at(i)(0);
+        double n = pt_cam(1) - features.at(i)(1);
+        fout << m << " " << n << "\n";
         errors.push_back(error);
     }
 
@@ -103,6 +109,9 @@ void computeError(const std::string &dir_path, int ind,
     cv::imwrite(dir_path + "repro" + std::to_string(ind) + ".png", img);
     cv::imshow("1", img);
     cv::waitKey(0);
+
+    fout.close();
+    return ;
 }
 
 void featureBA(const std::string &dir_path, 

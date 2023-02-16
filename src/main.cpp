@@ -136,16 +136,16 @@ void featureBA(const std::string &dir_path,
 
     for (int i = 0, iend = points3D.size(); i < iend; i++)
     {
-        ceres::CostFunction* f1 = 
-                new ceres::AutoDiffCostFunction<featureProjectionFactor, 2, 7, 3>(new featureProjectionFactor(features1.at(i)));
+        // ceres::CostFunction* f1 = 
+        //         new ceres::AutoDiffCostFunction<featureProjectionFactor, 2, 7, 3>(new featureProjectionFactor(features1.at(i)));
         
-        // ProjectionFactor *f1 = new ProjectionFactor(features1.at(i));
+        ProjectionFactor *f1 = new ProjectionFactor(features1.at(i));
         problem.AddResidualBlock(f1, loss_function, param_pose[0], param_feature[i]);
 
-        ceres::CostFunction* f2 = 
-                new ceres::AutoDiffCostFunction<featureProjectionFactor, 2, 7, 3>(new featureProjectionFactor(features2.at(i)));
+        // ceres::CostFunction* f2 = 
+        //         new ceres::AutoDiffCostFunction<featureProjectionFactor, 2, 7, 3>(new featureProjectionFactor(features2.at(i)));
         
-        // ProjectionFactor *f2 = new ProjectionFactor(features2.at(i));
+        ProjectionFactor *f2 = new ProjectionFactor(features2.at(i));
         problem.AddResidualBlock(f2, loss_function, param_pose[1], param_feature[i]);
     }
 
@@ -194,6 +194,7 @@ int main()
     std::vector<Eigen::Vector2d> features1, features2;
     featureUtility(dir_path, R_w_c2, t_w_c2, points3D, features1, features2);
 
-    featureBA(dir_path, R_w_c1, t_w_c1, points3D, features1, features2);
+    featureBA(dir_path, R_w_c2, t_w_c2, points3D, features1, features2);
+
     return 0;
 }

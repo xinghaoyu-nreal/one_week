@@ -1,0 +1,10 @@
+build/
+.git/
+.vscode/
+lib/libeigen_utility.so
+lib/libeigen_utility.o
+lib/main
+config/
+!config/two_image_pose_estimation/1403637188088318976.png
+!config/two_image_pose_estimation/1403637189138319104.png
+!config/two_image_pose_estimation/sensor.yaml

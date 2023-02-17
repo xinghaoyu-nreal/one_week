@@ -56,5 +56,65 @@ bool ProjectionFactor::Evaluate(double const *const *parameters, double *residua
 
 void ProjectionFactor::check(double **parameters)
 {
+    double *res = new double[2];
+    double **jaco = new double *[2];
+    jaco[0] = new double[7];
+    jaco[1] = new double[3];
+    Evaluate(parameters, res, jaco);
+    puts("check begins");
 
+    puts("my");
+
+    std::cout << Eigen::Map<Eigen::Matrix<double, 2, 1>>(res).transpose() << std::endl
+              << std::endl;
+    std::cout << Eigen::Map<Eigen::Matrix<double, 2, 7, Eigen::RowMajor>>(jaco[0]) << std::endl
+              << std::endl;
+    std::cout << Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>>(jaco[1]) << std::endl
+              << std::endl;
+
+    Eigen::Vector3d t_wc(parameters[0][0], parameters[0][1], parameters[0][2]);
+    Eigen::Quaterniond q_wc(parameters[0][6], parameters[0][3], parameters[0][4], parameters[0][5]);
+    Eigen::Vector3d pt_w(parameters[1][0], parameters[1][1], parameters[1][2]);
+
+
+    Eigen::Vector2d residual;
+    Eigen::Quaterniond q_cw = q_wc.inverse();
+    Eigen::Vector3d t_cw = -q_wc.toRotationMatrix().transpose() * t_wc;
+    Eigen::Vector3d pt_cam = q_cw * pt_w + t_cw;
+    double z = pt_cam[2];
+    residual = pt_cam.head(2)/z - pt;
+    residual = sqrt_info * residual;
+
+    puts("num");
+    std::cout << residual.transpose() << std::endl;
+
+    const double eps = 1e-6;
+    Eigen::Matrix<double, 2, 10> num_jacobian;
+    for (int k = 0; k < 10; k++)
+    {
+        Eigen::Vector3d t_wc(parameters[0][0], parameters[0][1], parameters[0][2]);
+        Eigen::Quaterniond q_wc(parameters[0][6], parameters[0][3], parameters[0][4], parameters[0][5]);
+        Eigen::Vector3d pt_w(parameters[1][0], parameters[1][1], parameters[1][2]);
+
+        int a = k / 3, b = k % 3;
+        Eigen::Vector3d delta = Eigen::Vector3d(b == 0, b == 1, b == 2) * eps;
+
+        if (a == 0)
+            t_wc += delta;
+        else if (a == 1)
+            q_wc = q_wc * Utility::deltaQ(delta);
+        else if (a == 2)
+            pt_w += delta;
+
+        Eigen::Vector2d tmp_residual;
+        Eigen::Quaterniond q_cw = q_wc.inverse();
+        Eigen::Vector3d t_cw = -q_wc.toRotationMatrix().transpose() * t_wc;
+        Eigen::Vector3d pt_cam = q_cw * pt_w + t_cw;
+        double z = pt_cam[2];
+        tmp_residual = pt_cam.head(2)/z - pt;
+
+        tmp_residual = sqrt_info * tmp_residual;
+        num_jacobian.col(k) = (tmp_residual - residual) / eps;
+    }
+    std::cout << num_jacobian << std::endl;
 }

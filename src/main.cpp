@@ -149,6 +149,12 @@ void featureBA(const std::string &dir_path,
         
         ProjectionFactor *f2 = new ProjectionFactor(features2.at(i));
         problem.AddResidualBlock(f2, loss_function, param_pose[1], param_feature[i]);
+
+        if (!i)
+        {
+            std::vector<double *> para{param_pose[0], param_feature[i]};
+            f1->check(para.data());
+        }
     }
 
     ceres::Solver::Options options;
@@ -222,11 +228,11 @@ int main()
 
     featureBA(dir_path, R_w_c2, t_w_c2, points3D, features1, features2);
 
-    for (int j = 0, jend = features1.size(); j < jend; j++)
-    {
-        checkGradient(0, j, features1.at(j));
-        checkGradient(1, j, features2.at(j));
-    }
+    // for (int j = 0, jend = features1.size(); j < jend; j++)
+    // {
+    //     checkGradient(0, j, features1.at(j));
+    //     checkGradient(1, j, features2.at(j));
+    // }
 
     return 0;
 }

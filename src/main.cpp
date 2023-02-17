@@ -178,7 +178,7 @@ void checkGradient(int pose_ind, int feature_ind, const Eigen::Vector2d &feature
     
     ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
     const std::vector<const ceres::LocalParameterization *> local_parameterizations{local_parameterization, nullptr};
-
+    
     parameter_blocks.push_back(param_pose[pose_ind]);
     parameter_blocks.push_back(param_feature[feature_ind]);
     

@@ -2,7 +2,9 @@
 #include "opencv_utility.h"
 #include "pose_local_parameterization.h"
 #include "projection.h"
+
 #include <ceres/ceres.h>
+#include <ceres/gradient_checker.h>
 
 double param_pose[2][7];
 double param_feature[1000][3];
@@ -141,7 +143,7 @@ void featureBA(const std::string &dir_path,
         
         ProjectionFactor *f1 = new ProjectionFactor(features1.at(i));
         problem.AddResidualBlock(f1, loss_function, param_pose[0], param_feature[i]);
-
+        
         // ceres::CostFunction* f2 = 
         //         new ceres::AutoDiffCostFunction<featureProjectionFactor, 2, 7, 3>(new featureProjectionFactor(features2.at(i)));
         
@@ -152,6 +154,7 @@ void featureBA(const std::string &dir_path,
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::DENSE_QR; 
     options.trust_region_strategy_type = ceres::DOGLEG;
+    // options.check_gradients = true;
 
     options.max_num_iterations = 100;
     ceres::Solver::Summary summary;
@@ -165,6 +168,29 @@ void featureBA(const std::string &dir_path,
 
     computeError(dir_path, 1, R_w_c1, t_w_c1, points3D, features1);
     computeError(dir_path, 2, R_w_c2, t_w_c2, points3D, features2);
+}
+
+//gradient check
+void checkGradient(int pose_ind, int feature_ind, const Eigen::Vector2d &feature)
+{   
+    std::vector<double *> parameter_blocks;
+    ceres::NumericDiffOptions numeric_diff_options;
+    
+    ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
+    const std::vector<const ceres::LocalParameterization *> local_parameterizations{local_parameterization, nullptr};
+
+    parameter_blocks.push_back(param_pose[pose_ind]);
+    parameter_blocks.push_back(param_feature[feature_ind]);
+    
+    ceres::CostFunction* f1 = 
+        new ceres::AutoDiffCostFunction<featureProjectionFactor, 2, 7, 3>(new featureProjectionFactor(feature));
+    // ProjectionFactor *f1 = new ProjectionFactor(feature);
+    ceres::GradientChecker gradient_checker(f1, &local_parameterizations, numeric_diff_options);
+    ceres::GradientChecker::ProbeResults results;
+
+    if (!gradient_checker.Probe(parameter_blocks.data(), 1e-9, &results))
+        std::cout << "An error has occurred:\n" << results.error_log;
+
 }
 
 int main()
@@ -195,6 +221,12 @@ int main()
     featureUtility(dir_path, R_w_c2, t_w_c2, points3D, features1, features2);
 
     featureBA(dir_path, R_w_c2, t_w_c2, points3D, features1, features2);
+
+    for (int j = 0, jend = features1.size(); j < jend; j++)
+    {
+        checkGradient(0, j, features1.at(j));
+        checkGradient(1, j, features2.at(j));
+    }
 
     return 0;
 }

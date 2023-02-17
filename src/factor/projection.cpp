@@ -37,7 +37,7 @@ bool ProjectionFactor::Evaluate(double const *const *parameters, double *residua
             Eigen::Matrix<double, 3, 6> jaco_i;
             jaco_i.leftCols<3>() = -q_wc.toRotationMatrix().transpose();
             jaco_i.rightCols<3>() = Utility::skewSymmetric(pt_cam);
-
+            
             jacobian_pose.leftCols<6>() = reduce * jaco_i;
             jacobian_pose.rightCols<1>().setZero();
         }
